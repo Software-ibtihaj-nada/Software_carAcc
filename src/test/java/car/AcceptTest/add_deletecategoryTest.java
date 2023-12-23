@@ -25,7 +25,7 @@ public class add_deletecategoryTest {
 			}
 	@Then("category added successfully")
 	public void categoryAddedSuccessfully() {
-	   if(admin.flaginsertC==true) 
+	   if(admin.getFlaginsertC()==true) 
 		   assertTrue(true);
 	   else assertTrue(false); 
 	   
@@ -43,16 +43,11 @@ public void adminSetCategoryToDelete(String category) {
 }
 @Then("delete category successfully")
 public void deleteCategorySuccessfully() {
-    if(admin.flagdeleteC) 
+    if(admin.getFlagdeleteC()) 
     	  assertTrue(true);
 
     else assertTrue(false);
 }
-
-
-
-
-
 
 
 
