@@ -4,11 +4,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
-import java.util.*;
+import java.sql.SQLException;
 import java.util.logging.Logger;
 public class Order {
-	public  Logger logger=Logger.getLogger(Login.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Login.class.getName());
+    private static final String PRODUCT_PRICE = "productprice";
 
 	Connection con=null;
 	PreparedStatement stm=null;
@@ -19,8 +19,8 @@ public class Order {
 	private String productname;
 	private int productquntity;
 	private int productprice;
-	public  static Boolean test=false;
-	public  static Boolean test1=false;
+	private  static Boolean test=false;
+	private  static Boolean test1=false;
 
 	public Order() {
 	
@@ -80,16 +80,21 @@ public class Order {
 	public boolean adminViewOrder() {
  	   boolean flag=false;
  	   try {
- 		   Class.forName("com.mysql.jdbc.Driver");
- 		   String url="jdbc:mysql://localhost/caracc";
- 		   con=DriverManager.getConnection(url,"root","");
+ 		   connection();
  		   String sql="Select*from orders where Buy=true";
  		   stm=con.prepareStatement(sql);
  		   rs=stm.executeQuery();
  		   while (rs.next()) {
- 			   if(!test) {
- 				   logger.info(rs.getInt("id")+" "+rs.getString("customername")+" "+rs.getString("productname")+" "+rs.getInt("productquantity")+" "+
-     					   rs.getInt("productprice")+"$"+" "+rs.getString("city")+" "+rs.getString("street")+" "+rs.getString("phoneNumber"));//print order 
+ 			   if(!getTest()) {
+ 				  LOGGER.info(String.format("%d %s %s %d %d$ %s %s %s",
+ 					        rs.getInt("id"),
+ 					        rs.getString("customername"),
+ 					        rs.getString("productname"),
+ 					        rs.getInt("productquantity"),
+ 					        rs.getInt(PRODUCT_PRICE),
+ 					        rs.getString("city"),
+ 					        rs.getString("street"),
+ 					        rs.getString("phoneNumber")));
  			   }
  			   else {
  				 flag=true;  
@@ -99,16 +104,20 @@ public class Order {
  		   stm.close();
  	   }
  	   catch(Exception e) {
- 		   e.printStackTrace();
+ 	        LOGGER.severe("An error occurred: " + e.getMessage());
  	   }
  	   return flag;
     }
+	private void connection() throws ClassNotFoundException, SQLException {
+		String password = System.getProperty("database.password");
+		Class.forName("com.mysql.jdbc.Driver");
+		String url="jdbc:mysql://localhost/caracc";
+		con=DriverManager.getConnection(url,"root",password);
+	}
  public void insertOrder(Order order) {//add order to order table 
 		
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="INSERT INTO orders (customername,customerId,productId,productname,productquantity,productprice,Buy) values(?,?,?,?,?,?,?)";
 			stm=con.prepareStatement(sql);
 	
@@ -124,16 +133,16 @@ public class Order {
 			    	stm.setBoolean(7,false);
 			    int num=stm.executeUpdate();
 		if(num>0) {
-			Customer.finsertorder=true;
+			Customer.setFinsertOrder(true);
 		}
 		else {
-			Customer.finsertorder=false;
+			Customer.setFinsertOrder(false);
 		}
 			
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 
 	}
@@ -141,9 +150,7 @@ public class Order {
 		
 		int idd=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Select* from orders where customername='"+order.getcustomername()+"'and customerId='"+order.getcustomerId()+"' "
 					+"and productId='"+order.getproductId()+"'and productname='"+order.getproductname()+"' "
 							+" and productquantity='"+order.getproductquntity()+"'and productprice='"+order.getproductprice()+"' and Buy=false";
@@ -157,22 +164,20 @@ public class Order {
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		
 		return idd;
 	}
 	
-public boolean updateOrder(int orderId,int Quantity ) {
+public boolean updateOrder(int orderId,int quantity ) {
 	boolean flagUpdate=false;
 	 try {
- 		   Class.forName("com.mysql.jdbc.Driver");
-	   			String url="jdbc:mysql://localhost/caracc";
-	   			con=DriverManager.getConnection(url,"root","");
+ 		   connection();
 	   		    String sql="Update orders set productquantity=? where id='"+orderId+"'";
 	            stm=con.prepareStatement(sql);
 	           
-	            stm.setInt(1, Quantity);
+	            stm.setInt(1, quantity);
 	            
 	            int num=stm.executeUpdate();
 	            stm.close();
@@ -186,26 +191,24 @@ public boolean updateOrder(int orderId,int Quantity ) {
 	            
 	   		}
 	   		catch(Exception e) {
-	   			e.printStackTrace();
+	   	        LOGGER.severe("An error occurred: " + e.getMessage());
 	   		}
 	 return flagUpdate;
 }
 public void deleteOrder(int orderId) {
 
 	 try {
-  			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-  			con=DriverManager.getConnection(url,"root","");
+  			connection();
   			String sql="Delete from orders where ID='" +orderId+"' ";
   			stm=con.prepareStatement(sql);
   			int num =stm.executeUpdate();
-  					if (num!=0) Customer.flagdeleteO=true;
-			else Customer.flagdeleteO=false;
+  					if (num!=0) Customer.setFlagDeleteO(true);
+			else Customer.setFlagDeleteO(false);
   			stm.close();
   			
   		}
   		catch(Exception e) {
-  			e.printStackTrace();
+  	        LOGGER.severe("An error occurred: " + e.getMessage());
   		}
 
 
@@ -214,31 +217,49 @@ public boolean viewOrder(String customername) {
 	boolean flag1 =false;
 	int price=0;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select*from orders where customername='" +customername+"' and Buy=false";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		while (rs.next()) {
-			if(!test1) {
-			price+=rs.getInt("productprice");
-			logger.info(rs.getInt("id")+" "+rs.getString("productname")+" "+rs.getInt("productquantity")+" "+rs.getInt("productprice")+"$");//print order
+			if(!getTest1()) {
+			price+=rs.getInt(PRODUCT_PRICE);
+			LOGGER.info(String.format("%d %s %d $%d",
+                    rs.getInt("id"),
+                    rs.getString("productname"),
+                    rs.getInt("productquantity"),
+                    rs.getInt(PRODUCT_PRICE)));
 		}
 			else {
 				
 				flag1=true;
 			}
 		}
-		logger.info("Total Price= "+ price +" $");
+		LOGGER.info(String.format("Total Price= %d $", price));
 		rs.close();
 		stm.close();
 		
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return flag1;
+}
+public static Boolean getTest() {
+    return test;
+}
+
+
+public static void setTest(Boolean value) {
+	test = value;
+}
+public static Boolean getTest1() {
+    return test1;
+}
+
+
+public static void setTest1(Boolean value) {
+	test1 = value;
 }
 
 }
