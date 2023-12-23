@@ -3,25 +3,34 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 public class Customer {
-	public  Logger logger=Logger.getLogger(Login.class.getName());
-	public  Scanner scanner=new Scanner(System.in);
-	public  String scann;
+	   public static final Logger LOGGER = Logger.getLogger(Login.class.getName());
+	    public static final Scanner SCANN = new Scanner(System.in);
+	private  String scann;
 	Connection con=null;
 	PreparedStatement stm=null;
 	ResultSet rs=null;
-	public static boolean isavaliable=false;
-	public static boolean finsertorder=false;
-	public static boolean flag_search=false;
-public static boolean flagdeleteO=false;
-public Product product=new Product();
-public Order order=new Order();
-public Installer installer=new Installer();
-public String customername, phone, city, street,customeremail,password;
-public int customerid;
+	private static boolean isavaliable=false;
+	private static boolean finsertorder=false;
+	private static boolean flagSearch=false;
+private static boolean flagdeleteO=false;
+private Product product=new Product();
+private Order order=new Order();
+private Installer installer=new Installer();
+private String customername;
+private String phone;
+private String city;
+private String street;
+private String customeremail;
+private String password;
+private int customerid;
+private static final String SELECT_USERS_QUERY = "Select * from users where email='";
+private static final String SELECT_PRODUCT_BY_ID_QUERY = "Select * from product where id='";
+private static final String QUANTITY_LITERAL = "quantity";
+
 	public Customer() {
 
 	}
@@ -55,26 +64,26 @@ public int customerid;
 	public void customerDashboard(String user) {
 		int x=0;
 		while(x!=1) {
-			logger.info("Welcome, CUSTOMER!");
-			logger.info("Please choose you want need.");
-			logger.info("1.View category.");
-			logger.info("2.View product.");
-			logger.info("3.Make Installation request.");
-			logger.info("4.View Installation request.");
-			logger.info("5.Search.");
-			logger.info("6.View Shopping cart");
-			logger.info("7.Edit your profile");
-			logger.info("8.Log OUT");
+			LOGGER.info("Welcome, CUSTOMER!");
+			LOGGER.info("Please choose you want need.");
+			LOGGER.info("1.View category.");
+			LOGGER.info("2.View product.");
+			LOGGER.info("3.Make Installation request.");
+			LOGGER.info("4.View Installation request.");
+			LOGGER.info("5.Search.");
+			LOGGER.info("6.View Shopping cart");
+			LOGGER.info("7.Edit your profile");
+			LOGGER.info("8.Log OUT");
 
-			String input=scanner.nextLine();
+			String input=SCANN.nextLine();
 			if(input.equalsIgnoreCase("1")) {// View category
 				product.viewCategories();
 			}
 
 			else if(input.equalsIgnoreCase("2")){//View Product
-				logger.info("Enter name of category");
-	              String category=scanner.nextLine();
-	              ArrayList<Product>prod=new ArrayList<>();
+				LOGGER.info("Enter name of category");
+	              String category=SCANN.nextLine();
+	              ArrayList<Product>prod;
  	             
 	              prod= product.viewProduct(category);
 	              String vailability;
@@ -85,7 +94,13 @@ public int customerid;
 						else {
 							vailability="not avaliable";
 						}
-		     		logger.info("id="+prod.get(i).getId()+"\t"+prod.get(i).getName()+"\t"+prod.get(i).getDescription()+"\t"+prod.get(i).getPrice()+"$"+"\t"+vailability+"\t"+oldEvalProduct(prod.get(i).getId())+" star");
+		        	 LOGGER.info(String.format("id=%d\t%s\t%s\t%d$\t%s\t%d star",
+		                     prod.get(i).getId(),
+		                     prod.get(i).getName(),
+		                     prod.get(i).getDescription(),
+		                     prod.get(i).getPrice(),
+		                     vailability,
+		                     oldEvalProduct(prod.get(i).getId())));
 		     			}
 				viewBuy(user);
 			}
@@ -113,7 +128,7 @@ public int customerid;
 				x=1;
 			} 
 			else {
-				logger.info("Invalid choice. Please enter 1, 2, 3,4,5,6 ,7or 8.");
+				LOGGER.info("Invalid choice. Please enter 1, 2, 3,4,5,6 ,7or 8.");
 
 			}
 
@@ -125,10 +140,8 @@ public int customerid;
 	public void viewCategoryProduct(String category) {
 
 		try {
-			logger.info("please choose the number of product you want.");
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			LOGGER.info("please choose the number of product you want.");
+			connection();
 			String sql="Select * from product where category='" +category+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
@@ -139,14 +152,14 @@ public int customerid;
 				String description= rs.getString("description");
 				int price= rs.getInt("price");
 
-				if(rs.getInt("quantity")>0) {
+				if(rs.getInt(QUANTITY_LITERAL)>0) {
 					vailability="avaliable";
 				}
 				else {
 					vailability="not avaliable";
 				}
 
-				logger.info(id+"\t"+name+"\t"+description+"\t"+price+"$ \t"+vailability+"\t"+rs.getInt("evaluation")+" Stars");
+				LOGGER.info(String.format("%d\t%s\t%s\t%d$\t%s\t%d Stars", id, name, description, price, vailability, rs.getInt("evaluation")));
 		}
 			stm.close();
 			rs.close();
@@ -158,53 +171,52 @@ public int customerid;
 
 	}
 	public void viewBuy(String customername){
-		logger.info("1.add product to cart");
-		logger.info("2.Rate the products");
-		logger.info("3.Back to  products");
-		scann=scanner.nextLine();
-		if(scann.equalsIgnoreCase("1")) {//to buy product
-			logger.info("please enter id product");
-			scann=scanner.nextLine();
+		LOGGER.info("1.add product to cart");
+		LOGGER.info("2.Rate the products");
+		LOGGER.info("3.Back to  products");
+		scann=SCANN.nextLine();
+		if(scann.equalsIgnoreCase("1")) {
+			LOGGER.info("please enter id product");
+			scann=SCANN.nextLine();
 			int productId=Integer.parseInt(scann);
-			logger.info("enter quntity");
-			scann=scanner.nextLine();//prodect quntity
+			LOGGER.info("enter quntity");
+			scann=SCANN.nextLine();
 			int quantity=Integer.parseInt(scann);
 
 			productAvailable(quantity,productId);//add to order table 
-			if(isavaliable) {
+			if(getIsAvaliable()) {
 				int customerId=getCustomerId(customername);
 				String productname=product.getProductName(productId);
 				int price=product.getProductPrice(productId);
 				Order orderr=new Order(customername,customerId, productId,  productname,quantity,price);
 				order.insertOrder(orderr);
-				if(finsertorder) {
-					logger.info("insert order succsessfully");
-					int p_quantity=product.getProductQuantity(productId);
-					p_quantity-=quantity;
-					product.updateProductQuantity(productId,p_quantity);
+				if(getFinsertOrder()) {
+					LOGGER.info("insert order succsessfully");
+					int pQuantity=product.getProductQuantity(productId);
+					pQuantity-=quantity;
+					product.updateProductQuantity(productId,pQuantity);
 				}
 				else {
-					logger.info("insert order unsuccsessfully");	
+					LOGGER.info("insert order unsuccsessfully");	
 				}
 			}
 			else {
-				logger.info("This product is not avaliable or quantity avaliable not enough");	
+				LOGGER.info("This product is not avaliable or quantity avaliable not enough");	
 
 			}
 
 		}
 		else if(scann.equalsIgnoreCase("2")) {
-			logger.info("please enter id product");
-			scann=scanner.nextLine();
+			LOGGER.info("please enter id product");
+			scann=SCANN.nextLine();
 			int productId=Integer.parseInt(scann);
-			//viewProduct(productId);
-			logger.info("please enter your evaluation for product between 1-5");
-			scann=scanner.nextLine();
+			LOGGER.info("please enter your evaluation for product between 1-5");
+			scann=SCANN.nextLine();
 			int eval=Integer.parseInt(scann);
 			
 			while(eval<1||eval>5) {
-				logger.info("please enter your evaluation for product between 1-5");
-				scann=scanner.nextLine();
+				LOGGER.info("please enter your evaluation for product between 1-5");
+				scann=SCANN.nextLine();
 				 eval=Integer.parseInt(scann);	
 			}
 			int oldeval=oldEvalProduct(productId);
@@ -219,43 +231,39 @@ public int customerid;
 			}
 		}
 	}
-	public void makeInstallation(String email) {
-
-		 
+	public void makeInstallation(String email) { 
 		installer.viewInstaller();
-		 logger.info("Enter the id of installer you want ");
-		 String installer_id=scanner.nextLine();
-		 int instaler_id=Integer.parseInt(installer_id);
-		 logger.info("Enter the day of installation you want ");
-		 String day=scanner.nextLine();
+		 LOGGER.info("Enter the id of installer you want ");
+		 String installerId=SCANN.nextLine();
+		 int instalerIdd=Integer.parseInt(installerId);
+		 LOGGER.info("Enter the day of installation you want ");
+		 String day=SCANN.nextLine();
 		 
-			logger.info("Enter your request");
-			String request=scanner.nextLine();
+			LOGGER.info("Enter your request");
+			String request=SCANN.nextLine();
 			
-			logger.info("Enter your car model");
-			String carModel=scanner.nextLine();
+			LOGGER.info("Enter your car model");
+			String carModel=SCANN.nextLine();
 			 
-			logger.info("Enter your phone number");
-			this.phone=scanner.nextLine();
+			LOGGER.info("Enter your phone number");
+			this.phone=SCANN.nextLine();
 			
-			logger.info("Enter your address");
-			logger.info("Enter your city");
-			this.city=scanner.nextLine();
+			LOGGER.info("Enter your address");
+			LOGGER.info("Enter your city");
+			this.city=SCANN.nextLine();
 			
-			logger.info("Enter your street");
-			 this.street=scanner.nextLine();
+			LOGGER.info("Enter your street");
+			 this.street=SCANN.nextLine();
 			 this.customername=getCustomerName(email);
-			 String installer_name=installer.getInstallerName(instaler_id);
-		 installationReq(carModel,request,installer_name,day);
-		 installer.editDay(day,instaler_id,true);
-		 //send email to installer
+			 String installerName=installer.getInstallerName(instalerIdd);
+		 installationReq(carModel,request,installerName,day);
+		 installer.editDay(day,instalerIdd,true);
+		 
 		 EMAIL emaill=new EMAIL();
 			String body="Dear installer , \n you are have anew installation rwquest , please check your installation request table .";
          		
 			String subject="Customer installation request";
 			emaill.sendEmail("nadoosh.jamal.aj@gmail.com", subject, body);
-			 //System.out.println("Email sent successfully!");
-
 	}
 	
 	
@@ -263,10 +271,8 @@ public int customerid;
 public String getCustomerName(String email) {
 	String name=null;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
-		String sql="Select * from users where email='" +email+"' and user_type='customer' ";
+		connection();
+		String sql=SELECT_USERS_QUERY +email+"' and user_type='customer' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		if(rs.next()) {
@@ -276,16 +282,14 @@ public String getCustomerName(String email) {
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return name ;
 }
-public boolean installationReq(String carmodel,String request,String installer_name,String day) {
+public boolean installationReq(String carmodel,String request,String installerNamme,String day) {
 	int num=0;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="INSERT INTO installation_req (customername,customerphone,customerreq,carmodel,city,street,day,installer_name) values(?,?,?,?,?,?,?,?)";
 		stm=con.prepareStatement(sql);
 
@@ -296,95 +300,90 @@ public boolean installationReq(String carmodel,String request,String installer_n
 		    	stm.setString(5,city);
 		    	stm.setString(6,street);
 		    	stm.setString(7,day);
-		    	stm.setString(8,installer_name);
+		    	stm.setString(8,installerNamme);
 		 
 		     num=stm.executeUpdate();
-	
-		
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
-	if(num>0) {
-		return true;
-	}
-	else {
-	return false;
-	}
+	
+	return num>0;
+	
 }
 	
 	public void search(String user) {
-		logger.info("1.Search by name.");
-		logger.info("2.Search by price.");
-		logger.info("3.Search by category.");
-		scann=scanner.nextLine();
+		LOGGER.info("1.Search by name.");
+		LOGGER.info("2.Search by price.");
+		LOGGER.info("3.Search by category.");
+		scann=SCANN.nextLine();
 		ArrayList<Product>prod=new ArrayList<>();
 	
 		if(scann.equalsIgnoreCase("1")) {
-			logger.info("enter name");
-			scann=scanner.nextLine();
+			LOGGER.info("enter name");
+			scann=SCANN.nextLine();
 			prod=product.searchByName(scann);
 		
 		}
 		else if(scann.equalsIgnoreCase("2")) {
-			logger.info("enter price");
-			scann=scanner.nextLine();
+			LOGGER.info("enter price");
+			scann=SCANN.nextLine();
 			int price=Integer.parseInt(scann);
 			prod=product.searchByPrice(price);
 		}
 		else if(scann.equalsIgnoreCase("3")) {
-			logger.info("enter category");
-			scann=scanner.nextLine();
+			LOGGER.info("enter category");
+			scann=SCANN.nextLine();
 
 			prod=product.searchByCategory(scann);
 		}
-		if(!flag_search) {
-			logger.info("no product to display");
+		if(!getFlag_search()) {
+			LOGGER.info("no product to display");
 		}
 		else {
 			for(int i=0;i<prod.size();i++) {
-		logger.info("id="+prod.get(i).getId()+"\t"+prod.get(i).getName()+"\t"+prod.get(i).getDescription()+"\t"+prod.get(i).getPrice()+"$"+"\t"+prod.get(i).getCategory());
+		LOGGER.info("id="+prod.get(i).getId()+"\t"+prod.get(i).getName()+"\t"+prod.get(i).getDescription()+"\t"+prod.get(i).getPrice()+"$"+"\t"+prod.get(i).getCategory());
 			}
 			viewBuy(user);
 		}
 	}
 	
 	public void shoppingCart(String user) {
-		logger.info("choose betwen choices");
-		logger.info("1.Update Order");
-		logger.info("2.Delete Order");
-		logger.info("3.Confirm Order");
-		logger.info("4.Go back");
-		scann=scanner.nextLine();
+		LOGGER.info("choose betwen choices");
+		LOGGER.info("1.Update Order");
+		LOGGER.info("2.Delete Order");
+		LOGGER.info("3.Confirm Order");
+		LOGGER.info("4.Go back");
+		scann=SCANN.nextLine();
 
 		if(scann.equalsIgnoreCase("1")) {
-			logger.info("to update quintity the product in your order please enter id order ");
-			scann=scanner.nextLine();
+			LOGGER.info("to update quintity the product in your order please enter id order ");
+			scann=SCANN.nextLine();
 			int orderid=Integer.parseInt(scann);
 
-			logger.info(" please enter new quantity ");
-			scann=scanner.nextLine();
-			int Quantity=Integer.parseInt(scann);
+			LOGGER.info(" please enter new quantity ");
+			scann=SCANN.nextLine();
+			int quuantity=Integer.parseInt(scann);
 
-			if(order.updateOrder(orderid,Quantity)) {
-				logger.info("update order succsessfuly");
+			if(order.updateOrder(orderid,quuantity)) {
+				LOGGER.info("update order succsessfuly");
 			}
 			else {
-				logger.info("update order unsuccsessfuly you enter incorrect id ");
+				LOGGER.info("update order unsuccsessfuly you enter incorrect id ");
 			}
 		}
 
 		else if(scann.equalsIgnoreCase("2")){
-			logger.info("to delete order please enter id order");
-			scann=scanner.nextLine();
+			LOGGER.info("to delete order please enter id order");
+			scann=SCANN.nextLine();
 			int idd=Integer.parseInt(scann);
 			order.deleteOrder(idd);
-			if(flagdeleteO) {
-				logger.info("Delete Order successfuly");	
+			if(getFlagDeleteO()) {
+				LOGGER.info("Delete Order successfuly");	
 			}
 			else {
-				logger.info("Delete Order unsuccessfuly, incorrect order Id");	
+				LOGGER.info("Delete Order unsuccessfuly, incorrect order Id");	
 			}
 		}
 		else if(scann.equalsIgnoreCase("3")){
@@ -397,10 +396,8 @@ public boolean installationReq(String carmodel,String request,String installer_n
 	public int getCustomerId(String customeremail) {
 		int id=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from users where email='" +customeremail+"' ";
+			connection();
+			String sql=SELECT_USERS_QUERY +customeremail+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			if(rs.next()) {
@@ -410,7 +407,7 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		return id;
 	}
@@ -418,36 +415,31 @@ public boolean installationReq(String carmodel,String request,String installer_n
 
 		try {
 
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from product where id='" +idproduct+"' ";
+			connection();
+			String sql=SELECT_PRODUCT_BY_ID_QUERY +idproduct+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			while (rs.next()) {
-				int price=rs.getInt("price"); 
-				if(rs.getInt("quantity")>0 && rs.getInt("quantity")>=quantity) {
-					//product is avaliable
-					isavaliable=true;
+
+				if(rs.getInt(QUANTITY_LITERAL)>0 && rs.getInt(QUANTITY_LITERAL)>=quantity) {
+					setIsAvaliable(true);
 				}
 				else {
-					isavaliable=false;
-				}
+					setIsAvaliable(false);
+					}
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 
 	}
 	public void insertConfirmOrder(String customername,String city,String street,String phoneNumber) {
 
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Update orders set Buy=?,city=?,street=?,phoneNumber=? where customername='"+customername+"'";
 			stm=con.prepareStatement(sql);
 
@@ -460,23 +452,21 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 
 	}
 	public void confirmOrder(String customername) {
-		logger.info("Enter your address");
-		logger.info("Enter your city");
-		scann=scanner.nextLine();
-		String city=scann;
+		LOGGER.info("Enter your address");
+		LOGGER.info("Enter your city");
+		scann=SCANN.nextLine();
+		String cityy=scann;
 
-		logger.info("Enter your steet");
-		scann=scanner.nextLine();
-		String street=scann;
+		LOGGER.info("Enter your steet");
+		String streett=SCANN.nextLine();;
 
-		logger.info("Enter your phone number");
-		scann=scanner.nextLine();
-		String phoneNumber=scann;
+		LOGGER.info("Enter your phone number");
+		String phoneNumber=SCANN.nextLine();;
 		int count=0;
 		for(int i=0;i<phoneNumber.length();i++) {
 			if(Character.isDigit(phoneNumber.charAt(i))) {
@@ -484,27 +474,24 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			}
 		}
 		if(count==phoneNumber.length()) {
-			//all phoneNumber is digit
-			insertConfirmOrder(customername,city,street,phoneNumber);
+			insertConfirmOrder(customername,cityy,streett,phoneNumber);
 			EMAIL email=new EMAIL();
 			String body="Dear user , \n your order is ready, please pick it up from the company's delivery service ."
             		+ "\n Please contact the owner of this number: 0599516693 in case the delivery is delayed or there is an error in the order."
             		+ " \n Thank you for dealing with our company for Car Accessories.";
 			String subject="Customer Order";
 			email.sendEmail("ibtihajsami9@gmail.com", subject, body);
-			 System.out.println("Email sent successfully!");
+			LOGGER.info("Email sent successfully!");
 
 		}
 		else {
-			logger.info("should all phoneNumber is digit");
+			LOGGER.info("should all phoneNumber is digit");
 		}
 	}
 	public boolean editName(String user,String ename){
 		boolean flagN=false;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Update users set name=? where email='"+user+"'";
 			stm=con.prepareStatement(sql);
 			stm.setString(1, ename);
@@ -515,16 +502,14 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			}
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		return flagN;
 	}
 	public boolean editEmail(String user,String eemail){
 		 boolean flagE=false;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Update users set email=? where email='"+user+"'";
 			stm=con.prepareStatement(sql);
 			stm.setString(1, eemail);
@@ -535,16 +520,14 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			}
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		return flagE;
 	}
 	public boolean editPassword(String user,String epassword){
 		boolean flagP=false;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Update users set password=? where email='"+user+"'";
 			stm=con.prepareStatement(sql);
 			stm.setString(1, epassword);
@@ -555,17 +538,21 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			}
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		return flagP;
+	}
+	private void connection() throws ClassNotFoundException, SQLException {
+		String password = System.getProperty("database.password");
+		Class.forName("com.mysql.jdbc.Driver");
+		String url="jdbc:mysql://localhost/caracc";
+		con=DriverManager.getConnection(url,"root",password);
 	}
 	public String getCustomerPassword(String user) {
 		String oldpass=null;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from users where email='" +user+"' ";
+			connection();
+			String sql=SELECT_USERS_QUERY +user+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			if(rs.next()) {
@@ -575,53 +562,50 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 		return oldpass;
 	}
 
 	public void editCustomerProfile(String user){
-		logger.info("1.edit your name");
-		logger.info("2.edit your email");
-		logger.info("3.edit your password");
-		String edit=scanner.nextLine();
+		LOGGER.info("1.edit your name");
+		LOGGER.info("2.edit your email");
+		LOGGER.info("3.edit your password");
+		String edit=SCANN.nextLine();
 		if(edit.equalsIgnoreCase("1")) {
-			logger.info("enter your new name");
-			String ename=scanner.nextLine();
+			LOGGER.info("enter your new name");
+			String ename=SCANN.nextLine();
 			editName(user,ename);
 		}
 		else if(edit.equalsIgnoreCase("2")) {
-			logger.info("enter your new email");
-			String eemail=scanner.nextLine();
+			LOGGER.info("enter your new email");
+			String eemail=SCANN.nextLine();
 			if(eemail.contains("@")||eemail.contains(".")) {
 				editEmail(user,eemail);
 			}
 		}
 		else if(edit.equalsIgnoreCase("3")) {
-			logger.info("enter your old password");
-			String oldPass=scanner.nextLine();
-			logger.info("enter your new password");
-			String epassword=scanner.nextLine();
+			LOGGER.info("enter your old password");
+			String oldPass=SCANN.nextLine();
+			LOGGER.info("enter your new password");
+			String epassword=SCANN.nextLine();
 			String oldpassword=getCustomerPassword(user);
 			if(oldPass.equals(oldpassword)){
 				editPassword(user,epassword);
 			}
 			else {
-				logger.info("enter wronge old password");
+				LOGGER.info("enter wronge old password");
 			}
 		}
 	}
     public void viewProduct(int id) {
 	
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select*from product where id='" +id+"' ";
+			connection();
+			String sql=SELECT_PRODUCT_BY_ID_QUERY+id+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			if (rs.next()) {
-				//logger.info(rs.getString("name")+" "+rs.getString("description")+" "+rs.getInt("price")+"$"+" "+rs.getInt("evaluation")+"Stars");//print order
 		
 				
 			}
@@ -629,16 +613,14 @@ public boolean installationReq(String carmodel,String request,String installer_n
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 	}
     public int oldEvalProduct(int id) {
 	int eval=0;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
-		String sql="Select * from product where id='" +id+"' ";
+		connection();
+		String sql=SELECT_PRODUCT_BY_ID_QUERY+id+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		if(rs.next()) {
@@ -648,16 +630,14 @@ public boolean installationReq(String carmodel,String request,String installer_n
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return eval;
 }
 
 public void setEval(int id,int neweval)	{
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Update product set evaluation=? where id='"+id+"'";
 		stm=con.prepareStatement(sql);
 
@@ -668,15 +648,13 @@ public void setEval(int id,int neweval)	{
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 }
 public void updateUserEval(int id,int user ) {
 
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Update product set userEval=? where id='"+id+"'";
 		stm=con.prepareStatement(sql);
 
@@ -687,17 +665,15 @@ public void updateUserEval(int id,int user ) {
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 }
 
 public int numberOfUserEval(int id) {
 	int user=0;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
-		String sql="Select * from product where id='" +id+"' ";
+		connection();
+		String sql=SELECT_PRODUCT_BY_ID_QUERY+id+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		if(rs.next()) {
@@ -707,8 +683,43 @@ public int numberOfUserEval(int id) {
 		stm.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return user;
+}
+public static Boolean getFinsertOrder() {
+    return finsertorder;
+}
+
+
+public static void setFinsertOrder(Boolean value) {
+	finsertorder = value;
+}
+
+public static Boolean getFlagDeleteO() {
+    return flagdeleteO;
+}
+
+
+public static void setFlagDeleteO(Boolean value) {
+	flagdeleteO = value;
+}
+
+public static Boolean getFlag_search() {
+    return flagSearch;
+}
+
+
+public static void setFlag_search(Boolean value) {
+	flagSearch = value;
+}
+
+public static Boolean getIsAvaliable() {
+    return isavaliable;
+}
+
+
+public static void setIsAvaliable(Boolean value) {
+	isavaliable = value;
 }
 }
