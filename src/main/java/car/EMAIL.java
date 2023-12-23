@@ -8,20 +8,20 @@ public class EMAIL {
 	
 	        public static boolean sendEmail(String to, String subject, String body) {
 	        	boolean flag=false;
-	        final String username = "carsoftware49@gmail.com"; // replace with your email
-	        final String password = "hlpv fxrk fxtj ydtu"; // replace with your email password
+	        final String username = "carsoftware49@gmail.com"; 
+	        final String kk = "hlpv fxrk fxtj ydtu"; 
 
 	        Properties props = new Properties();
 	        props.put("mail.smtp.auth", "true");
 	        props.put("mail.smtp.starttls.enable", "true");
-	        props.put("mail.smtp.host", "smtp.gmail.com"); // replace with your SMTP server
+	        props.put("mail.smtp.host", "smtp.gmail.com"); 
 	        props.put("mail.smtp.port", "587");
 	        props.put("mail.smtp.ssl.trust", "*");
 	        Session session = Session.getInstance(props,
 	                new Authenticator() {
 	                    @Override
 	                    protected PasswordAuthentication getPasswordAuthentication() {
-	                        return new PasswordAuthentication(username, password);
+	                        return new PasswordAuthentication(username, kk);
 	                    }
 	                });
 
@@ -35,7 +35,8 @@ public class EMAIL {
 	            Transport.send(message);
 	            flag=true;
 	           
-	        } catch (MessagingException e) {
+	        }
+	        catch (MessagingException e) {
 	            throw new RuntimeException(e);
 	        }
 	        return flag;
