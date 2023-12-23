@@ -3,7 +3,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 public class Product {
@@ -16,9 +16,18 @@ public class Product {
        Connection con=null;
        PreparedStatement stm=null;
    	   ResultSet rs=null;
-   	public  static Logger logger=Logger.getLogger(Login.class.getName());
-   	
-   	
+   	private static final Logger LOGGER = Logger.getLogger(Login.class.getName());
+   	public static final String CATEGORY_LITERAL = "category";
+   	public static final String ID_WHERE_CLAUSE = "' where id='";
+   	public static final String DESCRIPTION_LITERAL = "description";
+   	public static final String PRICE_LITERAL = "price";
+   	public static final String QUANTITY_LITERAL = "quantity";
+   	public static final String SELECT_PRODUCT_BY_ID_QUERY = "Select * from product where id='";
+
+
+
+
+
     public Product() {
     	
     }
@@ -88,31 +97,25 @@ public class Product {
 		}
 		   public void viewCategories() {
 	    		try {
-		   			Class.forName("com.mysql.jdbc.Driver");
-		   			String url="jdbc:mysql://localhost/caracc";
-		   			con=DriverManager.getConnection(url,"root","");
+		   			connection();
 		   			String sql="Select * from Category ";
 		   			stm=con.prepareStatement(sql);
 					rs=stm.executeQuery();
 		   			while (rs.next()) {
-		   			
-		   				logger.info(rs.getString("category"));
-		   
+		   				LOGGER.info(rs.getString(CATEGORY_LITERAL));
 		   			}
 
 		   			stm.close();
 		   			rs.close();
 		   		}
 		   		catch(Exception e) {
-		   			e.printStackTrace();
+		   	        LOGGER.severe("An error occurred: " + e.getMessage());
 		   		}
 			}   
 	     
 		   public void insertProduct(Product p){	     	   
 	    	   try {
-	    			Class.forName("com.mysql.jdbc.Driver");
-	    			String url="jdbc:mysql://localhost/caracc";
-	    			con=DriverManager.getConnection(url,"root","");
+	    			connection();
 	    			String sql="INSERT INTO product (name,description,price,quantity,category) values(?,?,?,?,?)";
 	    			stm=con.prepareStatement(sql);
 	    		
@@ -122,205 +125,183 @@ public class Product {
 	    	stm.setInt(4,p.getQuientity());
 	    	stm.setString(5,p.getCategory());
 	    int num=stm.executeUpdate();
-	    if (num!=0)  Admin.flaginsertP=true;
-		else Admin.flaginsertP=false;
+	    if (num!=0)  Admin.setFlaginsertP(true);
+		else Admin.setFlaginsertP(false);
 		
 	    	stm.close();
 	    		}
 	    		catch(Exception e) {
-	    			e.printStackTrace();
+	    	        LOGGER.severe("An error occurred: " + e.getMessage());
 	    		} 
 	    	   
 	    	   
 	       }
+		private void connection() throws ClassNotFoundException, SQLException {
+			String password = System.getProperty("database.password");
+			Class.forName("com.mysql.jdbc.Driver");
+			String url="jdbc:mysql://localhost/caracc";
+			con=DriverManager.getConnection(url,"root",password);
+		}
 		   
 		   public boolean updateProduct(String id,String name,String value) {
 			   int num=0;
 	    	   try {
-	    		   Class.forName("com.mysql.jdbc.Driver");
-		   			String url="jdbc:mysql://localhost/caracc";
-		   			con=DriverManager.getConnection(url,"root","");
+	    		   connection();
 		   			String sql=null;
 		   			if(name.equalsIgnoreCase("name")) {
-		   		     sql="Update product set name='"+ value+"' where id='"+id+"'";
+		   		     sql="Update product set name='"+ value+ID_WHERE_CLAUSE+id+"'";
 		   			}
-		   			else if(name.equalsIgnoreCase("description")	) {
-		   				sql="Update product set description='"+ value+"' where id='"+id+"'";
+		   			else if(name.equalsIgnoreCase(DESCRIPTION_LITERAL)	) {
+		   				sql="Update product set description='"+ value+ID_WHERE_CLAUSE+id+"'";
 		   			}
-		   			else if(name.equalsIgnoreCase("price")	) {
-		   				sql="Update product set price='"+ value+"' where id='"+id+"'";
+		   			else if(name.equalsIgnoreCase(PRICE_LITERAL)	) {
+		   				sql="Update product set price='"+ value+ID_WHERE_CLAUSE+id+"'";
 		   			}
-		   			else if(name.equalsIgnoreCase("quantity")	) {
-		   				sql="Update product set quantity='"+ value+"' where id='"+id+"'";
+		   			else if(name.equalsIgnoreCase(QUANTITY_LITERAL)	) {
+		   				sql="Update product set quantity='"+ value+ID_WHERE_CLAUSE
+		   						+id+"'";
 		   			}
-		            stm=con.prepareStatement(sql);
-//		            stm.setString(1, name);
-//		            stm.setString(2, desc);
-//		            stm.setInt(3, price);
-//		            stm.setInt(4, quintity);
-		            
+		            stm=con.prepareStatement(sql);	            
 		           num= stm.executeUpdate();
 		            stm.close();
 		   		}
 		   		catch(Exception e) {
-		   			e.printStackTrace();
-		   		}
-	    	   if(num>0) {
-	    		   return true;
-	    	   }
-	    	   else {
-	    		   return false;
-	    	   }
-	    	   
+		   	        LOGGER.severe("An error occurred: " + e.getMessage());
+		   		}	    	
+	    	   return num>0;
+    	   
 	       }
 		   public void removeProdct(int id ,String category) {
 	    	   try {
-		   			Class.forName("com.mysql.jdbc.Driver");
-					String url="jdbc:mysql://localhost/caracc";
-		   			con=DriverManager.getConnection(url,"root","");
+		   			connection();
 		   			String sql="Delete from product where ID='" +id+"'and category='"+category+"' ";
 		   			stm=con.prepareStatement(sql);
 		   			int num =stm.executeUpdate();
-		   					if (num!=0)  Admin.flagdeleteP=true;
-					else Admin.flagdeleteP=false;
+		   					if (num!=0)  Admin.setFlagdeleteP(true);
+					else Admin.setFlagdeleteP(false);
 		   			stm.close();
 		   			
 		   		}
 		   		catch(Exception e) {
-		   			e.printStackTrace();
+		   	        LOGGER.severe("An error occurred: " + e.getMessage());
 		   		}
 	       }
 		
 		
 		public String getProductName(int productId) {
-			String name=null;
+			String nname=null;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from product where id='" +productId+"' ";
+			connection();
+			String sql=SELECT_PRODUCT_BY_ID_QUERY +productId+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			 if(rs.next()) {
-		   name=rs.getString("name");
+		   nname=rs.getString("name");
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
-		return name;
+		return nname;
 	}
 		
 		public int getProductPrice(int productId) {
-			int price=0;
+			int pricee=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from product where id='" +productId+"' ";
+			connection();
+			String sql=SELECT_PRODUCT_BY_ID_QUERY +productId+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			 if(rs.next()) {
-		   price=rs.getInt("price");
+		   pricee=rs.getInt(PRICE_LITERAL);
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
-		return price;
+		return pricee;
 	}
 		public int getProductQuantity(int productId) {
-			int quantity=0;
+			int quantityy=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
-			String sql="Select * from product where id='" +productId+"' ";
+			connection();
+			String sql=SELECT_PRODUCT_BY_ID_QUERY +productId+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			 if(rs.next()) {
-				 quantity=rs.getInt("quantity");
+				 quantityy=rs.getInt(QUANTITY_LITERAL);
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
-		return quantity;
+		return quantityy;
 	}	
   
 		public int getProductId(String name) {
-			int id=0;
+			int iid=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Select * from product where name='" +name+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			 if(rs.next()) {
-				 id=rs.getInt("id");
+				 iid=rs.getInt("id");
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
-		return id;
+		return iid;
 	}	
 		
-		public void updateProductQuantity(int productId,int p_quantity){
+		public void updateProductQuantity(int productId,int pQuantity){
 			 try {
-	  		   Class.forName("com.mysql.jdbc.Driver");
-		   			String url="jdbc:mysql://localhost/caracc";
-		   			con=DriverManager.getConnection(url,"root","");
+	  		   connection();
 		   		    String sql="Update product set quantity=? where id='"+productId+"'";
 		            stm=con.prepareStatement(sql);
 		           
-		            stm.setInt(1, p_quantity);
+		            stm.setInt(1, pQuantity);
 		            
 		            stm.executeUpdate();
 		            stm.close();
 		   		}
 		   		catch(Exception e) {
-		   			e.printStackTrace();
+		   	        LOGGER.severe("An error occurred: " + e.getMessage());
 		   		}
 		}
 
 		public ArrayList<Product> searchByName(String name) {
 		ArrayList<Product>product=new ArrayList<>();
 					try {
-				Class.forName("com.mysql.jdbc.Driver");
-				String url="jdbc:mysql://localhost/caracc";
-				con=DriverManager.getConnection(url,"root","");
+				connection();
 				String sql="Select*from product where name='" +name+"' ";
 				stm=con.prepareStatement(sql);
 				rs=stm.executeQuery();
 				if(rs.next()) {
-					Customer.flag_search=true;
-					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString("description"),rs.getInt("price"),rs.getString("category"));
-					product.add(p);
-//				logger.info("id    name      description       price     category"+"\n"+
-//				rs.getInt("id")+" "+rs.getString("name")+" "+rs.getString("description")+" "+rs.getInt("price")+"$"+rs.getString("category"));//print order
-//					
+					Customer.setFlag_search(true);
+					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString(DESCRIPTION_LITERAL),rs.getInt(PRICE_LITERAL),rs.getString(CATEGORY_LITERAL));
+					product.add(p);					
 				}
 				else {
-					Customer.flag_search=false;
+					Customer.setFlag_search(false);;
 				}
 			
 				rs.close();
 				stm.close();
 			}
 			catch(Exception e) {
-				e.printStackTrace();
+		        LOGGER.severe("An error occurred: " + e.getMessage());
 			}	
-					if(Customer.flag_search) {return product;		}
+					if(Customer.getFlag_search()) {return product;		}
 					
 					else {
 						return null;
@@ -330,35 +311,33 @@ public class Product {
 		ArrayList<Product>product=new ArrayList<>();
 
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Select*from product where price='" +price+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			
 			if(rs.next()) {
-				Customer.flag_search=true;
+				Customer.setFlag_search(true);
 				stm=con.prepareStatement(sql);
 				rs=stm.executeQuery();
 				while (rs.next()) {
-					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString("description"),rs.getInt("price"),rs.getString("category"));
+					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString(DESCRIPTION_LITERAL),rs.getInt(PRICE_LITERAL),rs.getString(CATEGORY_LITERAL));
 					product.add(p);				}
 			}
 			else {
-				Customer.flag_search=false;
+				Customer.setFlag_search(false);
 			}
 
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}	
-if(Customer.flag_search) {return product;		}
+if(Customer.getFlag_search()) {return product;		}
 		
 		else {
-			return null;
+			 return new ArrayList<>();
 		}
 
 		}
@@ -367,60 +346,58 @@ if(Customer.flag_search) {return product;		}
 		ArrayList<Product>product=new ArrayList<>();
 
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Select*from product where category='" +category+"' ";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
 			
 			if(rs.next()) {
 				
-				Customer.flag_search=true;
+				Customer.setFlag_search(true);
 				
 				stm=con.prepareStatement(sql);
 				rs=stm.executeQuery();
 				while (rs.next()) {
-					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString("description"),rs.getInt("price"),rs.getString("category"));
+					Product p=new Product(rs.getInt("id"),rs.getString("name"),rs.getString(DESCRIPTION_LITERAL),rs.getInt(PRICE_LITERAL),rs.getString(CATEGORY_LITERAL));
 					product.add(p);					}
 			}
 			else {
-				Customer.flag_search=false;
+				Customer.setFlag_search(false);
 			}
 
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}	
-		if(Customer.flag_search) {return product;		}
+		if(Customer.getFlag_search()) {
+			return product;	
+		}
 		
 		else {
-			return null;
-		}
+			return new ArrayList<>();
+			}
 	}
 	public ArrayList<Product> viewProduct(String category){
    		ArrayList<Product>product=new ArrayList<>();
 
     	   try {
-    		   Class.forName("com.mysql.jdbc.Driver");
-    		   String url="jdbc:mysql://localhost/caracc";
-    		   con=DriverManager.getConnection(url,"root","");
+    		   connection();
     		   String sql="Select * from product where category='" +category+"' ";
     		   stm=con.prepareStatement(sql);
     		   rs=stm.executeQuery();
     		   while (rs.next()) {
     			   Product pro=new Product();
-    			   int id=rs.getInt("id");
-    			   String name= rs.getString("name");
-    			   String description= rs.getString("description");
-    			   int price= rs.getInt("price");
-    			   Integer q=rs.getInt("quantity");
-    			   pro.setId(id);
-    			   pro.setName(name);
-    			   pro.setDescription(description);
-    			   pro.setPrice(price);
+    			   int iddd=rs.getInt("id");
+    			   String namme= rs.getString("name");
+    			   String descriptionnn= rs.getString(DESCRIPTION_LITERAL);
+    			   int priccce= rs.getInt(PRICE_LITERAL);
+    			   Integer q=rs.getInt(QUANTITY_LITERAL);
+    			   pro.setId(iddd);
+    			   pro.setName(namme);
+    			   pro.setDescription(descriptionnn);
+    			   pro.setPrice(priccce);
     			   pro.setquantity(q);
     			   product.add(pro);
     			  
@@ -430,7 +407,7 @@ if(Customer.flag_search) {return product;		}
     		   rs.close();
     	   }
     	   catch(Exception e) {
-    		   e.printStackTrace();
+    	        LOGGER.severe("An error occurred: " + e.getMessage());
     	   }
     	   return product;	
        }
