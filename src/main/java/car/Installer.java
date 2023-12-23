@@ -9,7 +9,7 @@ import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class Installer {
-	public  Logger logger=Logger.getLogger(Login.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(Login.class.getName());
 	Connection con=null;
 	PreparedStatement stm=null;
 	ResultSet rs=null;
@@ -19,10 +19,15 @@ public class Installer {
 	private String email;
 	private String password;
 	private String phone;
-	public  static Boolean test=false;
-
-	public  Scanner scanner=new Scanner(System.in);
-	public  String scann;
+	private  static Boolean test=false;
+    private static final String FIRST_NAME_COLUMN = "first_name";
+    private static final String LAST_NAME_COLUMN = "last_name";
+    private static final String CUSTOMER_NAME_COLUMN = "customername";
+    private static final String CUSTOMER_REQ_COLUMN = "customerreq";
+    private static final String CAR_MODEL_COLUMN = "carmodel";
+    private static final String CUSTOMER_PHONE_COLUMN = "customerphone";
+    private static final String STREET_COLUMN = "street";
+    private static final Scanner SCANNER = new Scanner(System.in);
 	public Installer() {
 	
 	}
@@ -44,11 +49,11 @@ public class Installer {
 	public void setemail(String email) {
 		this.email=email;
 	}
-	public void setphone(String password) {
-		this.password=password;
+	public void setphone(String pho) {
+		this.password=pho;
 	}
-	public void setpassword(String phone) {
-		this.phone=phone;
+	public void setpassword(String pa) {
+		this.phone=pa;
 	}
 	
 	
@@ -72,14 +77,14 @@ public class Installer {
 	public void installerDashboard(String email) {
 		int x=0;
 		while(x!=1) {
-			logger.info("Welcome, INSTALLER!");
-			logger.info("Please choose you want need.");
-			logger.info("1.View Instllation request.");
-			logger.info("2.Done Instllation request.");
-			logger.info("3.Change the installation day.");
-			logger.info("4.Log OUT");
+			LOGGER.info("Welcome, INSTALLER!");
+			LOGGER.info("Please choose you want need.");
+			LOGGER.info("1.View Instllation request.");
+			LOGGER.info("2.Done Instllation request.");
+			LOGGER.info("3.Change the installation day.");
+			LOGGER.info("4.Log OUT");
 
-			String input=scanner.nextLine();
+			String input=SCANNER.nextLine();
 			if(input.equalsIgnoreCase("1")) {
 				int id=getInstallerId(email);
 				String name=getInstallerName(id);
@@ -88,35 +93,35 @@ public class Installer {
 			}
 
 			else if(input.equalsIgnoreCase("2")){
-				logger.info("Enter the id of installation to make it done");
-				String id=scanner.nextLine();
-				int installaion_id=Integer.parseInt(id);
-				int installer_id=getInstallerId(email);
-				String day=getInstallationDay(installaion_id);
-				editDay(day,installer_id,false);
-				if(removeInstallation(installaion_id)) {
-					logger.info("Done installation");
+				LOGGER.info("Enter the id of installation to make it done");
+				String id=SCANNER.nextLine();
+				int installaionId=Integer.parseInt(id);
+				int installerId=getInstallerId(email);
+				String day=getInstallationDay(installaionId);
+				editDay(day,installerId,false);
+				if(removeInstallation(installaionId)) {
+					LOGGER.info("Done installation");
 					
 				}
 				else {
-					logger.info("you enter wrong id");
+					LOGGER.info("you enter wrong id");
 				}
 			}
 			
 			else if(input.equalsIgnoreCase("3")){
-				int id_installer=getInstallerId(email);
-				String name=getInstallerName(id_installer);
+				int idinstaller=getInstallerId(email);
+				String name=getInstallerName(idinstaller);
 				viewInstallationReq(name);
 				
-				logger.info("Enter the id of installation to change the day");
-				String id_installation=scanner.nextLine();
-				int id_inst=Integer.parseInt(id_installation);
-				logger.info("Enter the new day");
-				String new_day=scanner.nextLine();
-				String oldDay =getInstallationDay(id_inst);
-				this.editDay(oldDay, id_installer, false);
-				this.editDay(new_day, id_installer, true);
-				updateDayforcustomer(id_inst,new_day);
+				LOGGER.info("Enter the id of installation to change the day");
+				String iddinstallation=SCANNER.nextLine();
+				int idinst=Integer.parseInt(iddinstallation);
+				LOGGER.info("Enter the new day");
+				String newday=SCANNER.nextLine();
+				String oldDay =getInstallationDay(idinst);
+				this.editDay(oldDay, idinstaller, false);
+				this.editDay(newday, idinstaller, true);
+				updateDayforcustomer(idinst,newday);
 				EMAIL emaill=new EMAIL();
 				String body="Dear customer, \n We would like to inform you that there has been a change in the installation calculations, please check your account \n"
 						+ "if there is any problem  please contact us of this number: 0599516693.";
@@ -132,7 +137,7 @@ public class Installer {
 				x=1;
 			} 
 			else {
-				logger.info("Invalid choice. Please enter 1, 2 or 3");
+				LOGGER.info("Invalid choice. Please enter 1, 2 or 3");
 
 			}
 
@@ -143,9 +148,7 @@ public class Installer {
 	public boolean insertInstaller(Installer installer) {
 		int num=0;
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="INSERT INTO installer (first_name,last_name,email,password,phone_num,saturday,sunday,monday,tuesday,Wensday,Thuersday) values(?,?,?,?,?,?,?,?,?,?,?)";
 			stm=con.prepareStatement(sql);
 	
@@ -165,23 +168,22 @@ public class Installer {
 			stm.close();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
-		if(num>0) {
-			return true;
-		}
-		else {
-			return false;
-		}
-	
+   return num>0;
+
+	}
+	private void connection() throws ClassNotFoundException, SQLException {
+		String password = System.getProperty("database.password");
+		Class.forName("com.mysql.jdbc.Driver");
+		String url="jdbc:mysql://localhost/caracc";
+		con=DriverManager.getConnection(url,"root",password);
 	}
 	
 public void viewInstaller() {
 		
 		try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Select * from installer";
 			stm=con.prepareStatement(sql);
 			rs=stm.executeQuery();
@@ -190,42 +192,45 @@ public void viewInstaller() {
 			while (rs.next()) {
 				String day="";
 			        
-				if(rs.getBoolean("Saturday")==false) {
+				if(!rs.getBoolean("Saturday")) {
 					day+="  Saturday";
 				}
-				if(rs.getBoolean("Sunday")==false) {
+				if(!rs.getBoolean("Sunday")) {
 					day+="  Sunday";
 				}
-				if(rs.getBoolean("Monday")==false) {
+				if(!rs.getBoolean("Monday")) {
 					day+="  Monday";
 				}
-				if(rs.getBoolean("Tuesday")==false) {
+				if(!rs.getBoolean("Tuesday")) {
 					day+="  Tuesday";
 				}
-				if(rs.getBoolean("Wensday")==false) {
+				if(!rs.getBoolean("Wensday")) {
 					day+="  Wensday";
 				}
-				if(rs.getBoolean("Thuersday")==false) {
+				if(!rs.getBoolean("Thuersday")) {
 					day+="  Thuersday";
 				}
-				logger.info("id= "+rs.getInt("id")+" "+rs.getString("first_name")+" "+rs.getString("last_name")+"  Phone Number is:"+rs.getString("phone_num")+"\n"+"Avaliable ON:"+day);
-				
+				LOGGER.info(String.format("id= %d %s %s  Phone Number is:%s%nAvaliable ON:%s",
+				        rs.getInt("id"),
+				        rs.getString(FIRST_NAME_COLUMN),
+				        rs.getString(LAST_NAME_COLUMN),
+				        rs.getString("phone_num"),
+				        day));
+
 		}
 			stm.close();
 			rs.close();
 		}
 
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		}
 	}
 
 public int getInstallerId(String email) {
 	int id=0;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select * from installer where email='"+email+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
@@ -240,7 +245,7 @@ public int getInstallerId(String email) {
 	}
 
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return id;
 }
@@ -250,16 +255,14 @@ public String getInstallerName(int id) {
 	
 	String name=null;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select * from installer where id='"+id+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		
 		
 		if (rs.next()) {
-		name=rs.getString("first_name")+" "+rs.getString("last_name");
+		name=rs.getString(FIRST_NAME_COLUMN)+" "+rs.getString(LAST_NAME_COLUMN);
 			
 	}
 		stm.close();
@@ -267,15 +270,13 @@ public String getInstallerName(int id) {
 	}
 
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return name;
 }
 public void viewInstallationReq(String name) {
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select * from installation_req where installer_name='"+name+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
@@ -283,22 +284,21 @@ public void viewInstallationReq(String name) {
 		
 		while (rs.next()) {
 		int idd=rs.getInt("id");
-		String c_name=rs.getString("customername");
-		String req=rs.getString("customerreq");
-		String carmodel=rs.getString("carmodel");
+		String cname=rs.getString(CUSTOMER_NAME_COLUMN);
+		String req=rs.getString(CUSTOMER_REQ_COLUMN);
+		String carmodel=rs.getString(CAR_MODEL_COLUMN);
 		String day=rs.getString("day");
-		String phone=rs.getString("customerphone");
-		String city=rs.getString("city");
-		String street=rs.getString("street");
-		
-		logger.info("id= "+idd+"\t"+c_name+"\t"+req+"\t"+carmodel+"\t"+ day+"\t"+phone+"\t"+city+"\t"+street);	
+		String phonee=rs.getString(CUSTOMER_PHONE_COLUMN);
+		String citty=rs.getString("city");
+		String strreet=rs.getString(STREET_COLUMN);
+		LOGGER.info(String.format("id= %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", idd, cname, req, carmodel, day, phonee, citty, strreet));
 	}
 		stm.close();
 		rs.close();
 	}
 
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}	
 	
 }
@@ -306,9 +306,7 @@ public void viewInstallationReq(String name) {
 public boolean editDay(String day,int id,boolean validDay) {
 	boolean flag=false;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql=null;
 		if(validDay) {
 		 sql="Update installer set "+day+"=true where id='"+id+"'";
@@ -317,7 +315,6 @@ public boolean editDay(String day,int id,boolean validDay) {
 			sql="Update installer set "+day+"=false where id='"+id+"'";
 		}
 		stm=con.prepareStatement(sql);
-		//stm.setBoolean(1, true);
 		int num=stm.executeUpdate();
 		stm.close();
 		if(num>0) {
@@ -325,19 +322,17 @@ public boolean editDay(String day,int id,boolean validDay) {
 		}
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return flag;
 
 }
 
-public boolean removeInstallation(int Id) {
+public boolean removeInstallation(int idd) {
 	int num =0;
 	 try {
- 			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
- 			con=DriverManager.getConnection(url,"root","");
- 			String sql="Delete from installation_req where ID='" +Id+"' ";
+ 			connection();
+ 			String sql="Delete from installation_req where ID='" +idd+"' ";
  			stm=con.prepareStatement(sql);
  			 num =stm.executeUpdate();
  					
@@ -345,20 +340,16 @@ public boolean removeInstallation(int Id) {
  			
  		}
  		catch(Exception e) {
- 			e.printStackTrace();
+ 	        LOGGER.severe("An error occurred: " + e.getMessage());
  		}
-	 if (num!=0)return true;
-		else  return false;
-
+	 return num != 0;
 }
-public String getInstallationDay(int installation_id) {
+public String getInstallationDay(int instid) {
 	String day=null;
 	
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
-		String sql="Select * from installation_req where id='"+installation_id+"' ";
+		connection();
+		String sql="Select * from installation_req where id='"+instid+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		
@@ -371,17 +362,15 @@ public String getInstallationDay(int installation_id) {
 	}
 
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}	
 	return day;
 }
-public boolean updateDayforcustomer(int installation_id,String day){
+public boolean updateDayforcustomer(int instid,String day){
 	boolean flagUpdate=false;
 	 try {
-		   Class.forName("com.mysql.jdbc.Driver");
-	   			String url="jdbc:mysql://localhost/caracc";
-	   			con=DriverManager.getConnection(url,"root","");
-	   		    String sql="Update installation_req set day=? where id='"+installation_id+"'";
+		   connection();
+	   		    String sql="Update installation_req set day=? where id='"+instid+"'";
 	            stm=con.prepareStatement(sql);
 	           
 	            stm.setString(1, day);
@@ -398,7 +387,7 @@ public boolean updateDayforcustomer(int installation_id,String day){
 	            
 	   		}
 	   		catch(Exception e) {
-	   			e.printStackTrace();
+	   	        LOGGER.severe("An error occurred: " + e.getMessage());
 	   		}
 	 return flagUpdate;
 }
@@ -406,25 +395,24 @@ public boolean updateDayforcustomer(int installation_id,String day){
 public boolean veiwInstallationRequestAdmin() {
 	boolean flag=false;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select * from installation_req  ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 	
 		while (rs.next()) {
-		if(!test) {
+		if(!getTest()) {
 		int idd=rs.getInt("id");
-		String c_name=rs.getString("customername");
-		String req=rs.getString("customerreq");
-		String carmodel=rs.getString("carmodel");
+		String cnname=rs.getString(CUSTOMER_NAME_COLUMN);
+		String req=rs.getString(CUSTOMER_REQ_COLUMN);
+		String carmodel=rs.getString(CAR_MODEL_COLUMN);
 		String day=rs.getString("day");
-		String phone=rs.getString("customerphone");
-		String city=rs.getString("city");
-		String street=rs.getString("street");
+		String phonee=rs.getString(CUSTOMER_PHONE_COLUMN);
+		String city1=rs.getString("city");
+		String street1=rs.getString(STREET_COLUMN);
 		String installername=rs.getString("installer_name");
-		logger.info("id= "+idd+"\t"+installername+"\t"+c_name+"\t"+req+"\t"+carmodel+"\t"+ day+"\t"+phone+"\t"+city+"\t"+street);	
+		LOGGER.info(String.format("id= %s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s", idd, installername, cnname, req, carmodel, day, phonee, city1, street1));
+
 	}
 		else {
 			flag=true;
@@ -434,38 +422,33 @@ public boolean veiwInstallationRequestAdmin() {
 		rs.close();
 	}
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}
 	return flag;
 	
 }
 public void viewInstallerAdmin() {
 	   try {
-		   Class.forName("com.mysql.jdbc.Driver");
-		   String url="jdbc:mysql://localhost/caracc";
-
-		   con=DriverManager.getConnection(url,"root","");
+		   connection();
 		   String sql="Select * from installer ";
 		   stm=con.prepareStatement(sql);
 		   rs=stm.executeQuery();
 
 		   while (rs.next()) {
 			   Integer id=rs.getInt("id");
-			   logger.info(id+"\t"+rs.getString("first_name")+"\t"+rs.getString("last_name")+"\t"+rs.getString("phone_num"));
+			   LOGGER.info(String.format("%s\t%s\t%s\t%s", id, rs.getString(FIRST_NAME_COLUMN), rs.getString(LAST_NAME_COLUMN), rs.getString("phone_num")));
 		   }
 		   stm.close();
 		   rs.close();
 	   }
 	   catch(Exception e) {
-		   e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 	   }
 }
 public boolean removeInstaller(int id) {
 	int num=0;
 	   try {
-			Class.forName("com.mysql.jdbc.Driver");
-			String url="jdbc:mysql://localhost/caracc";
-			con=DriverManager.getConnection(url,"root","");
+			connection();
 			String sql="Delete from installer where ID='" +id+"' ";
 			stm=con.prepareStatement(sql);
 			 num =stm.executeUpdate();
@@ -474,42 +457,32 @@ public boolean removeInstaller(int id) {
 			
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe("An error occurred: " + e.getMessage());
 		} 
-	   
-	   if (num>0) {
-			return true;
-		}
-	   else {
-		   return false;
-	   }
 	
+		   return num>0;
+	   
 }
 
 public boolean customerViewInstallation(String name) {
 	boolean flag=false;
 	try {
-		Class.forName("com.mysql.jdbc.Driver");
-		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root","");
+		connection();
 		String sql="Select * from installation_req where customername='"+name+"' ";
 		stm=con.prepareStatement(sql);
 		rs=stm.executeQuery();
 		
 		
 		while (rs.next()) {
-			if(!test) {
+			if(!getTest()) {
 		int idd=rs.getInt("id");
-		String c_name=rs.getString("customername");
-		String req=rs.getString("customerreq");
-		String carmodel=rs.getString("carmodel");
+		String cname=rs.getString(CUSTOMER_NAME_COLUMN);
+		String req=rs.getString(CUSTOMER_REQ_COLUMN);
+		String carmodel=rs.getString(CAR_MODEL_COLUMN);
 		String day=rs.getString("day");
-		String phone=rs.getString("customerphone");
-		String city=rs.getString("city");
-		String street=rs.getString("street");
-		String installer_name=rs.getString("installer_name");
-
-		logger.info("id= "+idd+"\t"+c_name+"\t"+req+"\t"+carmodel+"\t"+ day+"\t"+installer_name);	
+		String phonee=rs.getString(CUSTOMER_PHONE_COLUMN);
+		String installername=rs.getString("installer_name");
+		LOGGER.info(String.format("id= %d\t%s\t%s\t%s\t%s\t%s\t%s", idd, cname, req, carmodel, day, installername, phonee));
 	}
 			else {
 				flag=true;
@@ -521,9 +494,17 @@ public boolean customerViewInstallation(String name) {
 	}
 
 	catch(Exception e) {
-		e.printStackTrace();
+        LOGGER.severe("An error occurred: " + e.getMessage());
 	}	
 	return flag;
 }
 
+public static Boolean getTest() {
+    return test;
+}
+
+
+public static void setTest(Boolean value) {
+	   test = value;
+}
 }
