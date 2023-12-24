@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 public class Customer {
-	   public static final Logger LOGGER = Logger.getLogger(Login.class.getName());
+	   public static final Logger LOGGER = Logger.getLogger(Customer.class.getName());
 	    public static final Scanner SCANN = new Scanner(System.in);
-	private  String scann;
+	private  String scanN;
 	Connection con=null;
 	PreparedStatement stm=null;
 	ResultSet rs=null;
@@ -30,6 +30,7 @@ private int customerid;
 private static final String SELECT_USERS_QUERY = "Select * from users where email='";
 private static final String SELECT_PRODUCT_BY_ID_QUERY = "Select * from product where id='";
 private static final String QUANTITY_LITERAL = "quantity";
+private static final String ERROR_PREFIX = "An error occurred: ";
 
 	public Customer() {
 
@@ -62,7 +63,7 @@ private static final String QUANTITY_LITERAL = "quantity";
 	return customerid;
 	}
 	public void customerDashboard(String user) {
-		int x=0;
+		int x=0; 
 		while(x!=1) {
 			LOGGER.info("Welcome, CUSTOMER!");
 			LOGGER.info("Please choose you want need.");
@@ -76,11 +77,11 @@ private static final String QUANTITY_LITERAL = "quantity";
 			LOGGER.info("8.Log OUT");
 
 			String input=SCANN.nextLine();
-			if(input.equalsIgnoreCase("1")) {// View category
+			if(input.equalsIgnoreCase("1")) {
 				product.viewCategories();
 			}
 
-			else if(input.equalsIgnoreCase("2")){//View Product
+			else if(input.equalsIgnoreCase("2")){
 				LOGGER.info("Enter name of category");
 	              String category=SCANN.nextLine();
 	              ArrayList<Product>prod;
@@ -94,33 +95,46 @@ private static final String QUANTITY_LITERAL = "quantity";
 						else {
 							vailability="not avaliable";
 						}
-		        	 LOGGER.info(String.format("id=%d\t%s\t%s\t%d$\t%s\t%d star",
-		                     prod.get(i).getId(),
-		                     prod.get(i).getName(),
-		                     prod.get(i).getDescription(),
-		                     prod.get(i).getPrice(),
-		                     vailability,
-		                     oldEvalProduct(prod.get(i).getId())));
+		        	 if (prod != null && i < prod.size()) {
+		        		    int productId = prod.get(i).getId();
+		        		    String productName = prod.get(i).getName();
+		        		    String productDescription = prod.get(i).getDescription();
+		        		    int productPrice = prod.get(i).getPrice();
+		        		    String availability = ""; // You need to define the logic for determining availability
+		        		    int oldEval = oldEvalProduct(productId);
+
+		        		    LOGGER.info(String.format("id=%d\t%s\t%s\t%d$\t%s\t%d star",
+		        		        productId,
+		        		        (productName != null) ? productName : "",
+		        		        (productDescription != null) ? productDescription : "",
+		        		        productPrice,
+		        		        availability,
+		        		        oldEval
+		        		    ));
+		        		} else {
+		        		    LOGGER.warning("Product list is null or index is out of bounds. Unable to log information.");
+		        		}
+
 		     			}
 				viewBuy(user);
 			}
 			
-			else if(input.equalsIgnoreCase("3")){//to Make Installation request
+			else if(input.equalsIgnoreCase("3")){
                  makeInstallation(user);
 			}
-			else if(input.equalsIgnoreCase("4")){//to view Installation request
+			else if(input.equalsIgnoreCase("4")){
 				String name=getCustomerName(user);
 			
 				installer.customerViewInstallation(name);
 			}
-			else if(input.equalsIgnoreCase("5")){//
+			else if(input.equalsIgnoreCase("5")){
 				search(user);
 			}
-			else if(input.equalsIgnoreCase("6")){// to View Order
+			else if(input.equalsIgnoreCase("6")){
 				order.viewOrder(user);
 				shoppingCart(user);
 			}
-			else if(input.equalsIgnoreCase("7")){// Edit profile
+			else if(input.equalsIgnoreCase("7")){
 		     editCustomerProfile(user);
 			}
 			else if(input.equalsIgnoreCase("8")){
@@ -136,6 +150,7 @@ private static final String QUANTITY_LITERAL = "quantity";
 
 	}
 	
+	
 
 	public void viewCategoryProduct(String category) {
 
@@ -147,6 +162,7 @@ private static final String QUANTITY_LITERAL = "quantity";
 			rs=stm.executeQuery();
 			String vailability=null;
 			while (rs.next()) {
+				int stars=0;
 				String id="id = "+rs.getInt("id");
 				String name= rs.getString("name");
 				String description= rs.getString("description");
@@ -159,14 +175,28 @@ private static final String QUANTITY_LITERAL = "quantity";
 					vailability="not avaliable";
 				}
 
-				LOGGER.info(String.format("%d\t%s\t%s\t%d$\t%s\t%d Stars", id, name, description, price, vailability, rs.getInt("evaluation")));
-		}
+				if (rs != null) {
+		
+				    if (!rs.wasNull()) {
+				        name = rs.getString(2);
+				    }
+			      if (!rs.wasNull()) {
+				        description = rs.getString(3);
+				    }
+
+				    price = rs.getInt(4);
+				    stars = rs.getInt(7);
+
+				    LOGGER.info(String.format("%d\t%s\t%s\t%d$\t%s\t%d Stars", id, name, description, price, vailability, stars));
+				} else {
+				    LOGGER.warning("Result set is null. Unable to log information.");
+				}		}
 			stm.close();
 			rs.close();
 		}
 
 		catch(Exception e) {
-			e.printStackTrace();
+	        LOGGER.severe(ERROR_PREFIX + e.getMessage());
 		}
 
 	}
@@ -174,14 +204,14 @@ private static final String QUANTITY_LITERAL = "quantity";
 		LOGGER.info("1.add product to cart");
 		LOGGER.info("2.Rate the products");
 		LOGGER.info("3.Back to  products");
-		scann=SCANN.nextLine();
-		if(scann.equalsIgnoreCase("1")) {
+		scanN=SCANN.nextLine();
+		if(scanN.equalsIgnoreCase("1")) {
 			LOGGER.info("please enter id product");
-			scann=SCANN.nextLine();
-			int productId=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int productId=Integer.parseInt(scanN);
 			LOGGER.info("enter quntity");
-			scann=SCANN.nextLine();
-			int quantity=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int quantity=Integer.parseInt(scanN);
 
 			productAvailable(quantity,productId);//add to order table 
 			if(getIsAvaliable()) {
@@ -206,18 +236,18 @@ private static final String QUANTITY_LITERAL = "quantity";
 			}
 
 		}
-		else if(scann.equalsIgnoreCase("2")) {
+		else if(scanN.equalsIgnoreCase("2")) {
 			LOGGER.info("please enter id product");
-			scann=SCANN.nextLine();
-			int productId=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int productId=Integer.parseInt(scanN);
 			LOGGER.info("please enter your evaluation for product between 1-5");
-			scann=SCANN.nextLine();
-			int eval=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int eval=Integer.parseInt(scanN);
 			
 			while(eval<1||eval>5) {
 				LOGGER.info("please enter your evaluation for product between 1-5");
-				scann=SCANN.nextLine();
-				 eval=Integer.parseInt(scann);	
+				scanN=SCANN.nextLine();
+				 eval=Integer.parseInt(scanN);	
 			}
 			int oldeval=oldEvalProduct(productId);
 			int numberOfUser=numberOfUserEval(productId);
@@ -282,7 +312,7 @@ public String getCustomerName(String email) {
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 	return name ;
 }
@@ -306,7 +336,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 	
 	return num>0;
@@ -317,28 +347,28 @@ public boolean installationReq(String carmodel,String request,String installerNa
 		LOGGER.info("1.Search by name.");
 		LOGGER.info("2.Search by price.");
 		LOGGER.info("3.Search by category.");
-		scann=SCANN.nextLine();
+		scanN=SCANN.nextLine();
 		ArrayList<Product>prod=new ArrayList<>();
 	
-		if(scann.equalsIgnoreCase("1")) {
+		if(scanN.equalsIgnoreCase("1")) {
 			LOGGER.info("enter name");
-			scann=SCANN.nextLine();
-			prod=product.searchByName(scann);
+			scanN=SCANN.nextLine();
+			prod=product.searchByName(scanN);
 		
 		}
-		else if(scann.equalsIgnoreCase("2")) {
+		else if(scanN.equalsIgnoreCase("2")) {
 			LOGGER.info("enter price");
-			scann=SCANN.nextLine();
-			int price=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int price=Integer.parseInt(scanN);
 			prod=product.searchByPrice(price);
 		}
-		else if(scann.equalsIgnoreCase("3")) {
+		else if(scanN.equalsIgnoreCase("3")) {
 			LOGGER.info("enter category");
-			scann=SCANN.nextLine();
+			scanN=SCANN.nextLine();
 
-			prod=product.searchByCategory(scann);
+			prod=product.searchByCategory(scanN);
 		}
-		if(!getFlag_search()) {
+		if(!getFlagSearch()) {
 			LOGGER.info("no product to display");
 		}
 		else {
@@ -355,16 +385,16 @@ public boolean installationReq(String carmodel,String request,String installerNa
 		LOGGER.info("2.Delete Order");
 		LOGGER.info("3.Confirm Order");
 		LOGGER.info("4.Go back");
-		scann=SCANN.nextLine();
+		scanN=SCANN.nextLine();
 
-		if(scann.equalsIgnoreCase("1")) {
+		if(scanN.equalsIgnoreCase("1")) {
 			LOGGER.info("to update quintity the product in your order please enter id order ");
-			scann=SCANN.nextLine();
-			int orderid=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int orderid=Integer.parseInt(scanN);
 
 			LOGGER.info(" please enter new quantity ");
-			scann=SCANN.nextLine();
-			int quuantity=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int quuantity=Integer.parseInt(scanN);
 
 			if(order.updateOrder(orderid,quuantity)) {
 				LOGGER.info("update order succsessfuly");
@@ -374,10 +404,10 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			}
 		}
 
-		else if(scann.equalsIgnoreCase("2")){
+		else if(scanN.equalsIgnoreCase("2")){
 			LOGGER.info("to delete order please enter id order");
-			scann=SCANN.nextLine();
-			int idd=Integer.parseInt(scann);
+			scanN=SCANN.nextLine();
+			int idd=Integer.parseInt(scanN);
 			order.deleteOrder(idd);
 			if(getFlagDeleteO()) {
 				LOGGER.info("Delete Order successfuly");	
@@ -386,7 +416,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 				LOGGER.info("Delete Order unsuccessfuly, incorrect order Id");	
 			}
 		}
-		else if(scann.equalsIgnoreCase("3")){
+		else if(scanN.equalsIgnoreCase("3")){
 			confirmOrder(user);
 			
 		}
@@ -407,7 +437,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			stm.close();
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 		}
 		return id;
 	}
@@ -421,18 +451,14 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			rs=stm.executeQuery();
 			while (rs.next()) {
 
-				if(rs.getInt(QUANTITY_LITERAL)>0 && rs.getInt(QUANTITY_LITERAL)>=quantity) {
-					setIsAvaliable(true);
-				}
-				else {
-					setIsAvaliable(false);
-					}
+				setIsAvaliable(rs.getInt(QUANTITY_LITERAL) > 0 && rs.getInt(QUANTITY_LITERAL) >= quantity ? true : false);
+
 			}
 			rs.close();
 			stm.close();
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 		}
 
 	}
@@ -452,21 +478,21 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			stm.close();
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 		}
 
 	}
 	public void confirmOrder(String customername) {
 		LOGGER.info("Enter your address");
 		LOGGER.info("Enter your city");
-		scann=SCANN.nextLine();
-		String cityy=scann;
+		scanN=SCANN.nextLine();
+		String cityy=scanN;
 
 		LOGGER.info("Enter your steet");
-		String streett=SCANN.nextLine();;
+		String streett=SCANN.nextLine();
 
 		LOGGER.info("Enter your phone number");
-		String phoneNumber=SCANN.nextLine();;
+		String phoneNumber=SCANN.nextLine();
 		int count=0;
 		for(int i=0;i<phoneNumber.length();i++) {
 			if(Character.isDigit(phoneNumber.charAt(i))) {
@@ -502,7 +528,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			}
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX + e.getMessage());
 		}
 		return flagN;
 	}
@@ -520,7 +546,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			}
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX + e.getMessage());
 		}
 		return flagE;
 	}
@@ -538,15 +564,15 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			}
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX + e.getMessage());
 		}
 		return flagP;
 	}
 	private void connection() throws ClassNotFoundException, SQLException {
-		String password = System.getProperty("database.password");
+		String passwordd = System.getProperty("database.password");
 		Class.forName("com.mysql.jdbc.Driver");
 		String url="jdbc:mysql://localhost/caracc";
-		con=DriverManager.getConnection(url,"root",password);
+		con=DriverManager.getConnection(url,"root",passwordd);
 	}
 	public String getCustomerPassword(String user) {
 		String oldpass=null;
@@ -562,7 +588,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			stm.close();
 		}
 		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
+	        LOGGER.severe(ERROR_PREFIX + e.getMessage());
 		}
 		return oldpass;
 	}
@@ -598,24 +624,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 			}
 		}
 	}
-    public void viewProduct(int id) {
-	
-		try {
-			connection();
-			String sql=SELECT_PRODUCT_BY_ID_QUERY+id+"' ";
-			stm=con.prepareStatement(sql);
-			rs=stm.executeQuery();
-			if (rs.next()) {
-		
-				
-			}
-			rs.close();
-			stm.close();
-		}
-		catch(Exception e) {
-	        LOGGER.severe("An error occurred: " + e.getMessage());
-		}
-	}
+    
     public int oldEvalProduct(int id) {
 	int eval=0;
 	try {
@@ -630,7 +639,7 @@ public boolean installationReq(String carmodel,String request,String installerNa
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 	return eval;
 }
@@ -648,7 +657,7 @@ public void setEval(int id,int neweval)	{
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 }
 public void updateUserEval(int id,int user ) {
@@ -665,7 +674,7 @@ public void updateUserEval(int id,int user ) {
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 }
 
@@ -683,7 +692,7 @@ public int numberOfUserEval(int id) {
 		stm.close();
 	}
 	catch(Exception e) {
-        LOGGER.severe("An error occurred: " + e.getMessage());
+        LOGGER.severe(ERROR_PREFIX+ e.getMessage());
 	}
 	return user;
 }
@@ -705,12 +714,12 @@ public static void setFlagDeleteO(Boolean value) {
 	flagdeleteO = value;
 }
 
-public static Boolean getFlag_search() {
+
+public static Boolean getFlagSearch() {
     return flagSearch;
 }
 
-
-public static void setFlag_search(Boolean value) {
+public static void setFlagSearch(Boolean value) {
 	flagSearch = value;
 }
 
